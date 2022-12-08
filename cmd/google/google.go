@@ -17,7 +17,6 @@ var GoogleCmd = &cobra.Command{
 	},
 }
 
-
 func init() {
 
 }
