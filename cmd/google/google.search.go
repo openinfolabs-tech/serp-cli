@@ -6,6 +6,7 @@ package google
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -41,7 +42,7 @@ func crawlGoogle(searchQuery string) {
 		panic(err)
 	}
 
-	var initialUrl string = fmt.Sprintf("https://www.google.com/search?q=%s&client=firefox-b-e", searchQuery)
+	var initialUrl string = fmt.Sprintf("https://www.google.com/search?q=%s&client=firefox-b-e", url.QueryEscape(searchQuery))
 	var nextPage string = ""
 
 	// Create a new collector
@@ -61,7 +62,7 @@ func crawlGoogle(searchQuery string) {
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		r.Save(fmt.Sprintf("%d.html", paginationIndex))
+		// r.Save(fmt.Sprintf("%d.html", paginationIndex))
 		paginationIndex += 1
 	})
 
@@ -69,8 +70,8 @@ func crawlGoogle(searchQuery string) {
 	c.OnHTML("#pnnext", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
 		if paginationIndex < totalPages {
-			fmt.Println("Loading next page: ", fmt.Sprintf("https://google.com%s&client=firefox-b-e", link))
-			q.AddURL(fmt.Sprintf("https://google.com%sclient=firefox-b-e", link))
+			fmt.Println("Loading next page: ", fmt.Sprintf("https://google.com%s&client=firefox-b-e", url.QueryEscape(link)))
+			q.AddURL(fmt.Sprintf("https://google.com%sclient=firefox-b-e", url.QueryEscape(link)))
 		}
 	})
 
@@ -79,16 +80,16 @@ func crawlGoogle(searchQuery string) {
 		e.ForEach(".MjjYud", func(_ int, el *colly.HTMLElement) {
 			// var breadcrumb string = el.ChildText("div.TbwUpd.NJjxre cite")
 			var heading string = el.ChildText("a h3.LC20lb.MBeuO.DKV0Md")
-			var url string = el.ChildAttr("div.yuRUbf a", "href")
+			var urlString string = el.ChildAttr("div.yuRUbf a", "href")
 			var description string = el.ChildText("div.VwiC3b.yXK7lf.MUxGbd.yDYNvb.lyLwlc.lEBKkf")
 			// var timeAgo = el.ChildText("span.MUxGbd.wuQ4Ob.WZ8Tjf")
 
-			if len(heading) > 0 && len(url) > 0 && len(description) > 0 {
+			if len(heading) > 0 && len(urlString) > 0 && len(description) > 0 {
 				fmt.Println("")
 				fmt.Printf("%s\n", aurora.Magenta(heading))
 				fmt.Println(description)
 				// fmt.Printf("%s", aurora.Gray(20-1, breadcrumb))
-				fmt.Printf("%s\n", aurora.Cyan(url))
+				fmt.Printf("%s\n", aurora.Cyan(urlString))
 			}
 		})
 	})
