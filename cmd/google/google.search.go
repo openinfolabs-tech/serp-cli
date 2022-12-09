@@ -11,6 +11,7 @@ import (
 
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/queue"
+	"github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 )
 
@@ -64,15 +65,34 @@ func crawlGoogle(searchQuery string) {
 		paginationIndex += 1
 	})
 
-	// Set HTML callback
+	// Set HTML callback for pagination
 	c.OnHTML("#pnnext", func(e *colly.HTMLElement) {
-		// "a.nBDE1b:nth-child(3)"
 		link := e.Attr("href")
 		if paginationIndex < totalPages {
 			fmt.Println("Loading next page: ", fmt.Sprintf("https://google.com%s&client=firefox-b-e", link))
 			q.AddURL(fmt.Sprintf("https://google.com%sclient=firefox-b-e", link))
 		}
 	})
+
+	c.OnHTML("#cnt", func(e *colly.HTMLElement) {
+		// for each search engine result
+		e.ForEach(".MjjYud", func(_ int, el *colly.HTMLElement) {
+			// var breadcrumb string = el.ChildText("div.TbwUpd.NJjxre cite")
+			var heading string = el.ChildText("a h3.LC20lb.MBeuO.DKV0Md")
+			var url string = el.ChildAttr("div.yuRUbf a", "href")
+			var description string = el.ChildText("div.VwiC3b.yXK7lf.MUxGbd.yDYNvb.lyLwlc.lEBKkf")
+			// var timeAgo = el.ChildText("span.MUxGbd.wuQ4Ob.WZ8Tjf")
+
+			if len(heading) > 0 && len(url) > 0 && len(description) > 0 {
+				fmt.Println("")
+				fmt.Printf("%s\n", aurora.Magenta(heading))
+				fmt.Println(description)
+				// fmt.Printf("%s", aurora.Gray(20-1, breadcrumb))
+				fmt.Printf("%s\n", aurora.Cyan(url))
+			}
+		})
+	})
+
 	c.OnError(func(_ *colly.Response, err error) {
 		log.Println("Something went wrong:", err)
 	})
