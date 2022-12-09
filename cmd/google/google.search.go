@@ -15,16 +15,16 @@ import (
 )
 
 var (
-	queryParam string
-	pagesParam string
+	query string
+	pages string
 )
 
 func setHeaders(r *colly.Request) {
 	r.Headers.Set("Host", "www.google.com")
 	r.Headers.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0")
-	r.Headers.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+	r.Headers.Set("Accept", "text/html")
 	r.Headers.Set("Accept-Language", "en-US,en;q=0.5")
-	r.Headers.Set("Accept-Encoding", "gzip, deflate, br")
+	r.Headers.Set("Accept-Encoding", "text/html")
 	r.Headers.Set("Connection", "keep-alive")
 	r.Headers.Set("Upgrade-Insecure-Requests", "1")
 	r.Headers.Set("Sec-Fetch-Dest", "document")
@@ -33,7 +33,7 @@ func setHeaders(r *colly.Request) {
 	r.Headers.Set("TE", "trailers")
 }
 
-func crawlGoogle(searchQuery string, pages string) {
+func crawlGoogle(searchQuery string) {
 	var paginationIndex = 0
 	totalPages, err := strconv.Atoi(pages)
 	if err != nil {
@@ -43,7 +43,6 @@ func crawlGoogle(searchQuery string, pages string) {
 	var initialUrl string = fmt.Sprintf("https://www.google.com/search?q=%s&client=firefox-b-e", searchQuery)
 	var nextPage string = ""
 
-	var nextPageSelector = "a.nBDE1b"
 	// Create a new collector
 	c := colly.NewCollector()
 
@@ -52,7 +51,7 @@ func crawlGoogle(searchQuery string, pages string) {
 	}
 	c.SetRequestTimeout(60 * time.Second)
 	q, _ := queue.New(
-		4, // Number of consumer threads
+		1, // Number of consumer threads
 		&queue.InMemoryQueueStorage{MaxSize: 10000}, // Use default queue storage
 	)
 
@@ -62,21 +61,14 @@ func crawlGoogle(searchQuery string, pages string) {
 
 	c.OnResponse(func(r *colly.Response) {
 		r.Save(fmt.Sprintf("%d.html", paginationIndex))
-
+		paginationIndex += 1
 	})
-	if paginationIndex == 1 {
-		nextPageSelector = "a.nBDE1b:nth-child(3)"
-	}
-	if paginationIndex == 2 {
-		nextPageSelector = "a.nBDE1b:nth-child(4)"
-	}
+
 	// Set HTML callback
-	c.OnHTML(nextPageSelector, func(e *colly.HTMLElement) {
+	c.OnHTML("#pnnext", func(e *colly.HTMLElement) {
 		// "a.nBDE1b:nth-child(3)"
 		link := e.Attr("href")
-		fmt.Println("link >> ", link)
 		if paginationIndex < totalPages {
-			paginationIndex += 1
 			fmt.Println("Loading next page: ", fmt.Sprintf("https://google.com%s&client=firefox-b-e", link))
 			q.AddURL(fmt.Sprintf("https://google.com%sclient=firefox-b-e", link))
 		}
@@ -97,16 +89,15 @@ var googleSearchCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		msg := fmt.Sprintf("Starting crawl job for google.com, query: %s", queryParam)
+		msg := fmt.Sprintf("Starting crawl job for google.com, query: %s", query)
 		fmt.Println(msg)
-		crawlGoogle(queryParam, pagesParam)
+		crawlGoogle(query)
 	},
 }
 
 func init() {
-
-	googleSearchCmd.Flags().StringVarP(&queryParam, "query", "q", "", "The google search query")
-	googleSearchCmd.Flags().StringVarP(&pagesParam, "pages", "p", "", "Total number of pages to scrape, default is 1 page")
+	googleSearchCmd.Flags().StringVarP(&query, "query", "q", "", "The google search query")
+	googleSearchCmd.Flags().StringVarP(&pages, "pages", "p", "", "Total number of pages to scrape, default is 1 page")
 
 	if err := googleSearchCmd.MarkFlagRequired("query"); err != nil {
 		fmt.Println(err)
