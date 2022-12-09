@@ -17,8 +17,9 @@ import (
 )
 
 var (
-	query string
-	pages string
+	query  string
+	pages  string
+	output string
 )
 
 func trimLeftChars(s string, n int) string {
@@ -128,8 +129,9 @@ var googleSearchCmd = &cobra.Command{
 }
 
 func init() {
+	googleSearchCmd.Flags().StringVarP(&query, "output", "o", "", "specify the output format")
 	googleSearchCmd.Flags().StringVarP(&query, "query", "q", "", "The google search query")
-	googleSearchCmd.Flags().StringVarP(&pages, "pages", "p", "", "Total number of pages to scrape, default is 1 page")
+	googleSearchCmd.Flags().StringVarP(&pages, "pages", "p", "1", "Total number of pages to scrape, default is 1 page")
 
 	if err := googleSearchCmd.MarkFlagRequired("query"); err != nil {
 		fmt.Println(err)
