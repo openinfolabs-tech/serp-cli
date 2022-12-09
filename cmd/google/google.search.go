@@ -21,6 +21,17 @@ var (
 	pages string
 )
 
+func trimLeftChars(s string, n int) string {
+	m := 0
+	for i := range s {
+		if m >= n {
+			return s[i:]
+		}
+		m++
+	}
+	return s[:0]
+}
+
 func setHeaders(r *colly.Request) {
 	r.Headers.Set("Host", "www.google.com")
 	r.Headers.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0")
@@ -70,8 +81,8 @@ func crawlGoogle(searchQuery string) {
 	c.OnHTML("#pnnext", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
 		if paginationIndex < totalPages {
-			fmt.Println("Loading next page: ", fmt.Sprintf("https://google.com%s&client=firefox-b-e", url.QueryEscape(link)))
-			q.AddURL(fmt.Sprintf("https://google.com%sclient=firefox-b-e", url.QueryEscape(link)))
+			fmt.Println("Loading next page: ", fmt.Sprintf("https://google.com%s&client=firefox-b-e", link))
+			q.AddURL(fmt.Sprintf("https://google.com/%sclient=firefox-b-e", link))
 		}
 	})
 
@@ -87,7 +98,7 @@ func crawlGoogle(searchQuery string) {
 			if len(heading) > 0 && len(urlString) > 0 && len(description) > 0 {
 				fmt.Println("")
 				fmt.Printf("%s\n", aurora.Magenta(heading))
-				fmt.Println(description)
+				fmt.Println(aurora.White(description))
 				// fmt.Printf("%s", aurora.Gray(20-1, breadcrumb))
 				fmt.Printf("%s\n", aurora.Cyan(urlString))
 			}
