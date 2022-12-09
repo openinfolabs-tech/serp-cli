@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/jerlendds/toolbox/cmd/google"
-	"github.com/jerlendds/toolbox/cmd/info"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +30,6 @@ func Execute() {
 }
 
 func addSubcommandPalettes() {
-	rootCmd.AddCommand(info.InfoCmd)
 	rootCmd.AddCommand(google.GoogleCmd)
 }
 
