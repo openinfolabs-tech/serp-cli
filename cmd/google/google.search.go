@@ -26,17 +26,6 @@ var (
 	savePath string
 )
 
-func trimLeftChars(s string, n int) string {
-	m := 0
-	for i := range s {
-		if m >= n {
-			return s[i:]
-		}
-		m++
-	}
-	return s[:0]
-}
-
 func setHeaders(r *colly.Request) {
 	r.Headers.Set("Host", "www.google.com")
 	r.Headers.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0")
@@ -89,7 +78,6 @@ func crawlGoogle(searchQuery string) {
 	c.OnHTML("#pnnext", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
 		if paginationIndex < totalPages {
-			fmt.Println("Loading next page: ", fmt.Sprintf("https://google.com%s&client=firefox-b-e", link))
 			q.AddURL(fmt.Sprintf("https://google.com/%sclient=firefox-b-e", link))
 		}
 	})
@@ -151,7 +139,10 @@ func crawlGoogle(searchQuery string) {
 
 		} else {
 			// else no save path set, log results to console
-			fmt.Println(string(jsonArrVal))
+			if paginationIndex >= totalPages {
+				jsonArrVal, _ := json.Marshal(jsonResults)
+				fmt.Println(string(jsonArrVal))
+			}
 		}
 
 	})
@@ -160,29 +151,25 @@ func crawlGoogle(searchQuery string) {
 		log.Println("Something went wrong:", err)
 	})
 	if nextPage == "" {
-		fmt.Println("Loading first page: ", initialUrl)
 		q.AddURL(initialUrl)
 	}
 	q.Run(c)
 }
 
-// infoCmd represents the info command
 var googleSearchCmd = &cobra.Command{
 	Use:   "search",
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		msg := fmt.Sprintf("Starting crawl job for google.com, query: %s", query)
-		fmt.Println(msg)
 		crawlGoogle(query)
 	},
 }
 
 func init() {
 	googleSearchCmd.Flags().StringVarP(&savePath, "file", "f", "", "specify the path where results will be saved")
-	googleSearchCmd.Flags().StringVarP(&output, "output", "o", "", "specify the output format")
+	googleSearchCmd.Flags().StringVarP(&output, "output", "o", "", "specify the output format (json)")
 	googleSearchCmd.Flags().StringVarP(&query, "query", "q", "", "The google search query")
-	googleSearchCmd.Flags().StringVarP(&pages, "pages", "p", "1", "Total number of pages to scrape, default is 1 page")
+	googleSearchCmd.Flags().StringVarP(&pages, "pages", "p", "1", "Total number of pages to scrape")
 
 	if err := googleSearchCmd.MarkFlagRequired("query"); err != nil {
 		fmt.Println(err)
