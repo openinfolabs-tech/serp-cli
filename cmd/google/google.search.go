@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gocolly/colly"
@@ -55,7 +56,11 @@ func crawlGoogle(searchQuery string) {
 
 	// Create a new collector
 	c := colly.NewCollector()
-
+	c.Limit(&colly.LimitRule{
+		DomainGlob:  "*google.*",
+		Parallelism: 2,
+		RandomDelay: 2 * time.Second,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,7 +75,7 @@ func crawlGoogle(searchQuery string) {
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		// r.Save(fmt.Sprintf("%d.html", paginationIndex))
+		r.Save(fmt.Sprintf("%d.html", paginationIndex))
 		paginationIndex += 1
 	})
 
@@ -90,14 +95,41 @@ func crawlGoogle(searchQuery string) {
 			var urlString string = el.ChildAttr("div.yuRUbf a", "href")
 			var description string = el.ChildText("div.VwiC3b.yXK7lf.MUxGbd.yDYNvb.lyLwlc.lEBKkf")
 			var timeAgo = el.ChildText("span.MUxGbd.wuQ4Ob.WZ8Tjf")
-			var jsonObj map[string]interface{}
 
+			var videosHeader = el.ChildText("div.fc9yUc.tNxQIb.ynAwRc.OSrXXb")
+			var videosSubheader = el.ChildText("div.FzCfme")
+			var videosLink = el.ChildText("a.X5OiLe")
+			var peopleAlsoAskQuestion = el.ChildText("div.JlqpRe")
+			timeAgo = strings.Replace(timeAgo, " —", "", 1)
+
+			var jsonObj map[string]interface{}
 			err := json.Unmarshal([]byte("{}"), &jsonObj)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
+			// parse people also ask questions
+			if len(peopleAlsoAskQuestion) > 0 {
+				if output == "json" {
+					jsonObj["paaQuestion"] = peopleAlsoAskQuestion
+					jsonResults = append(jsonResults, jsonObj)
+
+				}
+			}
+
+			// parse top 'videos section' of search results
+			if len(videosHeader) > 0 && len(videosLink) > 0 {
+				if output == "json" {
+					jsonObj["videoHeader"] = videosHeader
+					jsonObj["videosSubheader"] = videosSubheader
+					jsonObj["videosLink"] = videosLink
+					jsonResults = append(jsonResults, jsonObj)
+
+				}
+			}
+
+			// parse classic search result
 			if len(heading) > 0 && len(urlString) > 0 && len(description) > 0 {
 				if output == "tui" {
 					fmt.Println("")
@@ -105,7 +137,9 @@ func crawlGoogle(searchQuery string) {
 					fmt.Println(aurora.White(description))
 					// fmt.Printf("%s", aurora.Gray(20-1, breadcrumb))
 					fmt.Printf("%s\n", aurora.Cyan(urlString))
+					fmt.Printf("%s\n", aurora.Cyan(urlString))
 				}
+
 				if output == "json" {
 					jsonObj["heading"] = heading
 					jsonObj["description"] = description
@@ -115,7 +149,9 @@ func crawlGoogle(searchQuery string) {
 					jsonResults = append(jsonResults, jsonObj)
 
 				}
+
 			}
+
 		})
 
 		jsonArrVal, _ := json.Marshal(jsonResults)
@@ -167,14 +203,11 @@ var googleSearchCmd = &cobra.Command{
 
 func init() {
 	googleSearchCmd.Flags().StringVarP(&savePath, "file", "f", "", "specify the path where results will be saved")
-	googleSearchCmd.Flags().StringVarP(&output, "output", "o", "", "specify the output format (json)")
+	googleSearchCmd.Flags().StringVarP(&output, "output", "o", "json", "specify the output format (json,tui)")
 	googleSearchCmd.Flags().StringVarP(&query, "query", "q", "", "The google search query")
 	googleSearchCmd.Flags().StringVarP(&pages, "pages", "p", "1", "Total number of pages to scrape")
 
 	if err := googleSearchCmd.MarkFlagRequired("query"); err != nil {
-		fmt.Println(err)
-	}
-	if err := googleSearchCmd.MarkFlagRequired("output"); err != nil {
 		fmt.Println(err)
 	}
 
