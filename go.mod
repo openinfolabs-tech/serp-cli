@@ -1,4 +1,4 @@
-module github.com/jerlendds/toolbox
+module github.com/jerlendds/serp-search
 
 go 1.19
 
