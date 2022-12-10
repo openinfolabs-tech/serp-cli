@@ -87,8 +87,49 @@ func crawlGoogle(searchQuery string) {
 		}
 	})
 
+	c.OnHTML("div.RzdJxc", func(e *colly.HTMLElement) {
+		var videosHeader = e.ChildText("div.fc9yUc.tNxQIb.ynAwRc.OSrXXb")
+		var videosSubheader = e.ChildText("div.FzCfme")
+		var videosLink = e.ChildAttr("div.sI5x9c > a.X5OiLe", "href")
+		if len(videosLink) > 0 {
+			if output == "json" {
+				var jsonObj map[string]interface{}
+				err := json.Unmarshal([]byte("{}"), &jsonObj)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				jsonObj["videoHeader"] = videosHeader
+				jsonObj["videosSubheader"] = videosSubheader
+				jsonObj["videosLink"] = videosLink
+				jsonResults = append(jsonResults, jsonObj)
+
+			}
+		}
+	})
+
+	// parse people also ask section
+	c.OnHTML("div.wQiwMc.related-question-pair", func(e *colly.HTMLElement) {
+		var peopleAlsoAskQuestion = e.ChildText("div.JlqpRe")
+		if len(peopleAlsoAskQuestion) > 0 {
+			if output == "json" {
+				var jsonObj map[string]interface{}
+				err := json.Unmarshal([]byte("{}"), &jsonObj)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				jsonObj["paaQuestion"] = peopleAlsoAskQuestion
+				jsonResults = append(jsonResults, jsonObj)
+
+			}
+		}
+
+	})
+
+	// parse typical search results
 	c.OnHTML("#cnt", func(e *colly.HTMLElement) {
-		// for each search engine result
 		e.ForEach(".MjjYud", func(_ int, el *colly.HTMLElement) {
 			var breadcrumb string = el.ChildText("div.TbwUpd.NJjxre cite")
 			var heading string = el.ChildText("a h3.LC20lb.MBeuO.DKV0Md")
@@ -96,10 +137,6 @@ func crawlGoogle(searchQuery string) {
 			var description string = el.ChildText("div.VwiC3b.yXK7lf.MUxGbd.yDYNvb.lyLwlc.lEBKkf")
 			var timeAgo = el.ChildText("span.MUxGbd.wuQ4Ob.WZ8Tjf")
 
-			var videosHeader = el.ChildText("div.fc9yUc.tNxQIb.ynAwRc.OSrXXb")
-			var videosSubheader = el.ChildText("div.FzCfme")
-			var videosLink = el.ChildText("a.X5OiLe")
-			var peopleAlsoAskQuestion = el.ChildText("div.JlqpRe")
 			timeAgo = strings.Replace(timeAgo, " —", "", 1)
 
 			var jsonObj map[string]interface{}
@@ -109,25 +146,7 @@ func crawlGoogle(searchQuery string) {
 				return
 			}
 
-			// parse people also ask questions
-			if len(peopleAlsoAskQuestion) > 0 {
-				if output == "json" {
-					jsonObj["paaQuestion"] = peopleAlsoAskQuestion
-					jsonResults = append(jsonResults, jsonObj)
-
-				}
-			}
-
 			// parse top 'videos section' of search results
-			if len(videosHeader) > 0 && len(videosLink) > 0 {
-				if output == "json" {
-					jsonObj["videoHeader"] = videosHeader
-					jsonObj["videosSubheader"] = videosSubheader
-					jsonObj["videosLink"] = videosLink
-					jsonResults = append(jsonResults, jsonObj)
-
-				}
-			}
 
 			// parse classic search result
 			if len(heading) > 0 && len(urlString) > 0 && len(description) > 0 {
