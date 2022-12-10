@@ -6,7 +6,6 @@ A work-in-progress Google and Google CSE CLI crawler...
 
 `./toolbox google search -p 2 --output tui -q "how to cast to int js"`
 
-unnecessary 
 ```bash
 ./toolbox google search -h
 # Usage:
