@@ -20,7 +20,8 @@ A work-in-progress Google and Google CSE CLI crawler...
 #   -q, --query string    The google search query
 ```
 
-![demo](./docs/demo.gif)
+![demo](https://user-images.githubusercontent.com/29207058/206865617-22da83f2-e74b-4b75-9116-a8874811dde3.gif)
+
 
 # License
 MIT
