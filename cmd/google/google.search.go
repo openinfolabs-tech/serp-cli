@@ -72,7 +72,7 @@ func crawlGoogle(searchQuery string) {
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		r.Save(fmt.Sprintf("%d.html", paginationIndex))
+		// r.Save(fmt.Sprintf("%d.html", paginationIndex))
 		paginationIndex += 1
 	})
 
@@ -81,6 +81,27 @@ func crawlGoogle(searchQuery string) {
 		link := e.Attr("href")
 		if paginationIndex < totalPages {
 			q.AddURL(fmt.Sprintf("https://google.com/%sclient=firefox-b-e", link))
+		}
+	})
+
+	// parse top 'top stories' section
+	c.OnHTML("a.WlydOe", func(e *colly.HTMLElement) {
+		storiesLink := e.Attr("href")
+		storiesDesc := e.ChildText("div.mCBkyc.tNxQIb.ynAwRc.jBgGLd.OSrXXb")
+		if len(storiesLink) > 0 {
+			if output == "json" {
+				var jsonObj map[string]interface{}
+				err := json.Unmarshal([]byte("{}"), &jsonObj)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				jsonObj["topStoriesLink"] = storiesLink
+				jsonObj["topStoriesDesc"] = storiesDesc
+				jsonResults = append(jsonResults, jsonObj)
+
+			}
 		}
 	})
 
@@ -134,7 +155,7 @@ func crawlGoogle(searchQuery string) {
 			var urlString string = el.ChildAttr("div.yuRUbf a", "href")
 			var description string = el.ChildText("div.VwiC3b.yXK7lf.MUxGbd.yDYNvb.lyLwlc.lEBKkf")
 			var timeAgo = el.ChildText("span.MUxGbd.wuQ4Ob.WZ8Tjf")
-
+			description = strings.Replace(description, timeAgo, "", 1)
 			timeAgo = strings.Replace(timeAgo, " —", "", 1)
 
 			var jsonObj map[string]interface{}
@@ -145,7 +166,7 @@ func crawlGoogle(searchQuery string) {
 			}
 
 			// parse classic search result
-			if len(heading) > 0 && len(urlString) > 0 && len(description) > 0 {
+			if len(urlString) > 0 {
 				if output == "tui" {
 					fmt.Println("")
 					fmt.Printf("%s\n", aurora.Magenta(heading))
