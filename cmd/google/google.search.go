@@ -4,9 +4,12 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package google
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
@@ -17,9 +20,10 @@ import (
 )
 
 var (
-	query  string
-	pages  string
-	output string
+	query    string
+	pages    string
+	output   string
+	savePath string
 )
 
 func trimLeftChars(s string, n int) string {
@@ -48,6 +52,9 @@ func setHeaders(r *colly.Request) {
 }
 
 func crawlGoogle(searchQuery string) {
+
+	var jsonResults []interface{}
+
 	var paginationIndex = 0
 	totalPages, err := strconv.Atoi(pages)
 	if err != nil {
@@ -65,7 +72,7 @@ func crawlGoogle(searchQuery string) {
 	}
 	c.SetRequestTimeout(60 * time.Second)
 	q, _ := queue.New(
-		1, // Number of consumer threads
+		2, // Number of consumer threads
 		&queue.InMemoryQueueStorage{MaxSize: 10000}, // Use default queue storage
 	)
 
@@ -90,20 +97,63 @@ func crawlGoogle(searchQuery string) {
 	c.OnHTML("#cnt", func(e *colly.HTMLElement) {
 		// for each search engine result
 		e.ForEach(".MjjYud", func(_ int, el *colly.HTMLElement) {
-			// var breadcrumb string = el.ChildText("div.TbwUpd.NJjxre cite")
+			var breadcrumb string = el.ChildText("div.TbwUpd.NJjxre cite")
 			var heading string = el.ChildText("a h3.LC20lb.MBeuO.DKV0Md")
 			var urlString string = el.ChildAttr("div.yuRUbf a", "href")
 			var description string = el.ChildText("div.VwiC3b.yXK7lf.MUxGbd.yDYNvb.lyLwlc.lEBKkf")
-			// var timeAgo = el.ChildText("span.MUxGbd.wuQ4Ob.WZ8Tjf")
+			var timeAgo = el.ChildText("span.MUxGbd.wuQ4Ob.WZ8Tjf")
+			var jsonObj map[string]interface{}
+
+			err := json.Unmarshal([]byte("{}"), &jsonObj)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
 
 			if len(heading) > 0 && len(urlString) > 0 && len(description) > 0 {
-				fmt.Println("")
-				fmt.Printf("%s\n", aurora.Magenta(heading))
-				fmt.Println(aurora.White(description))
-				// fmt.Printf("%s", aurora.Gray(20-1, breadcrumb))
-				fmt.Printf("%s\n", aurora.Cyan(urlString))
+				if output == "tui" {
+					fmt.Println("")
+					fmt.Printf("%s\n", aurora.Magenta(heading))
+					fmt.Println(aurora.White(description))
+					// fmt.Printf("%s", aurora.Gray(20-1, breadcrumb))
+					fmt.Printf("%s\n", aurora.Cyan(urlString))
+				}
+				if output == "json" {
+					jsonObj["heading"] = heading
+					jsonObj["description"] = description
+					jsonObj["url"] = urlString
+					jsonObj["breadcrumb"] = breadcrumb
+					jsonObj["timeAgo"] = timeAgo
+					jsonResults = append(jsonResults, jsonObj)
+
+				}
 			}
 		})
+
+		jsonArrVal, _ := json.Marshal(jsonResults)
+
+		if savePath != "" {
+			if paginationIndex >= totalPages {
+				f, err := os.Create(savePath)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				w := bufio.NewWriter(f)
+				totalBytes, err := w.WriteString(string(jsonArrVal))
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				fmt.Printf("wrote %d bytes to %s\n", totalBytes, savePath)
+				w.Flush()
+			}
+
+		} else {
+			// else no save path set, log results to console
+			fmt.Println(string(jsonArrVal))
+		}
+
 	})
 
 	c.OnError(func(_ *colly.Response, err error) {
@@ -129,11 +179,15 @@ var googleSearchCmd = &cobra.Command{
 }
 
 func init() {
-	googleSearchCmd.Flags().StringVarP(&query, "output", "o", "", "specify the output format")
+	googleSearchCmd.Flags().StringVarP(&savePath, "file", "f", "", "specify the path where results will be saved")
+	googleSearchCmd.Flags().StringVarP(&output, "output", "o", "", "specify the output format")
 	googleSearchCmd.Flags().StringVarP(&query, "query", "q", "", "The google search query")
 	googleSearchCmd.Flags().StringVarP(&pages, "pages", "p", "1", "Total number of pages to scrape, default is 1 page")
 
 	if err := googleSearchCmd.MarkFlagRequired("query"); err != nil {
+		fmt.Println(err)
+	}
+	if err := googleSearchCmd.MarkFlagRequired("output"); err != nil {
 		fmt.Println(err)
 	}
 

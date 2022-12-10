@@ -2,6 +2,11 @@
 
 A work-in-progress Google and Google CSE CLI crawler...
 
+`./toolbox google search -p 2 -o json -f google-results.json --query "how to cast to int js" `
+
+`./toolbox google search -p 2 --output tui -q "how to cast to int js"`
+
+
 ```bash
 ./toolbox google search -h
 # Usage:
@@ -13,4 +18,4 @@ A work-in-progress Google and Google CSE CLI crawler...
 #   -q, --query string   The google search query
 ```
 
-![demo](./docs/google-cli.gif)
+![demo](./docs/demo.gif)
