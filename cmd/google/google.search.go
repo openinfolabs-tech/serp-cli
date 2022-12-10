@@ -87,6 +87,7 @@ func crawlGoogle(searchQuery string) {
 		}
 	})
 
+	// parse top 'videos section' of search results
 	c.OnHTML("div.RzdJxc", func(e *colly.HTMLElement) {
 		var videosHeader = e.ChildText("div.fc9yUc.tNxQIb.ynAwRc.OSrXXb")
 		var videosSubheader = e.ChildText("div.FzCfme")
@@ -145,8 +146,6 @@ func crawlGoogle(searchQuery string) {
 				fmt.Println(err)
 				return
 			}
-
-			// parse top 'videos section' of search results
 
 			// parse classic search result
 			if len(heading) > 0 && len(urlString) > 0 && len(description) > 0 {
