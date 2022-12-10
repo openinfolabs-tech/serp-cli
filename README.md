@@ -13,9 +13,11 @@ A work-in-progress Google and Google CSE CLI crawler...
 #   toolbox google search [flags]
 
 # Flags:
-#   -h, --help           help for search
-#   -p, --pages string   Total number of pages to scrape, default is 1 page
-#   -q, --query string   The google search query
+#   -f, --file string     specify the path where results will be saved
+#   -h, --help            help for search
+#   -o, --output string   specify the output format
+#   -p, --pages string    Total number of pages to scrape, default is 1 page (default "1")
+#   -q, --query string    The google search query
 ```
 
 ![demo](./docs/demo.gif)
