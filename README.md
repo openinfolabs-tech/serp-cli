@@ -19,3 +19,6 @@ A work-in-progress Google and Google CSE CLI crawler...
 ```
 
 ![demo](./docs/demo.gif)
+
+# License
+MIT
