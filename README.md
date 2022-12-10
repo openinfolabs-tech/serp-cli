@@ -15,8 +15,8 @@ A work-in-progress Google and Google CSE CLI crawler...
 # Flags:
 #   -f, --file string     specify the path where results will be saved
 #   -h, --help            help for search
-#   -o, --output string   specify the output format
-#   -p, --pages string    Total number of pages to scrape, default is 1 page (default "1")
+#   -o, --output string   specify the output format (json,tui) (default "json")
+#   -p, --pages string    Total number of pages to scrape (default "1")
 #   -q, --query string    The google search query
 ```
 
