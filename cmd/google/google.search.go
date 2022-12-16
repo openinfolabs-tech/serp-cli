@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gocolly/colly"
@@ -53,6 +52,12 @@ func crawlGoogle(searchQuery string) {
 
 	// Create a new collector
 	c := colly.NewCollector()
+	// proxy
+	// rp, err := proxy.RoundRobinProxySwitcher()
+	// if err != nil {
+	// log.Fatal(err)
+	// }
+	// c.SetProxyFunc(rp)
 	c.Limit(&colly.LimitRule{
 		DomainGlob:  "*google.*",
 		Parallelism: 2,
@@ -62,6 +67,7 @@ func crawlGoogle(searchQuery string) {
 		log.Fatal(err)
 	}
 	c.SetRequestTimeout(60 * time.Second)
+
 	q, _ := queue.New(
 		2, // Number of consumer threads
 		&queue.InMemoryQueueStorage{MaxSize: 10000}, // Use default queue storage
@@ -97,8 +103,8 @@ func crawlGoogle(searchQuery string) {
 					return
 				}
 
-				jsonObj["topStoriesLink"] = storiesLink
-				jsonObj["topStoriesDesc"] = storiesDesc
+				jsonObj["link"] = storiesLink
+				jsonObj["description"] = storiesDesc
 				jsonResults = append(jsonResults, jsonObj)
 
 			}
@@ -119,9 +125,9 @@ func crawlGoogle(searchQuery string) {
 					return
 				}
 
-				jsonObj["videoHeader"] = videosHeader
-				jsonObj["videosSubheader"] = videosSubheader
-				jsonObj["videosLink"] = videosLink
+				jsonObj["title"] = videosHeader
+				jsonObj["description"] = videosSubheader
+				jsonObj["link"] = videosLink
 				jsonResults = append(jsonResults, jsonObj)
 
 			}
@@ -139,7 +145,7 @@ func crawlGoogle(searchQuery string) {
 					fmt.Println(err)
 					return
 				}
-				jsonObj["paaQuestion"] = peopleAlsoAskQuestion
+				jsonObj["question"] = peopleAlsoAskQuestion
 				jsonResults = append(jsonResults, jsonObj)
 
 			}
@@ -154,9 +160,6 @@ func crawlGoogle(searchQuery string) {
 			var heading string = el.ChildText("a h3.LC20lb.MBeuO.DKV0Md")
 			var urlString string = el.ChildAttr("div.yuRUbf a", "href")
 			var description string = el.ChildText("div.VwiC3b.yXK7lf.MUxGbd.yDYNvb.lyLwlc.lEBKkf")
-			var timeAgo = el.ChildText("span.MUxGbd.wuQ4Ob.WZ8Tjf")
-			description = strings.Replace(description, timeAgo, "", 1)
-			timeAgo = strings.Replace(timeAgo, " —", "", 1)
 
 			var jsonObj map[string]interface{}
 			err := json.Unmarshal([]byte("{}"), &jsonObj)
@@ -173,15 +176,13 @@ func crawlGoogle(searchQuery string) {
 					fmt.Println(aurora.White(description))
 					// fmt.Printf("%s", aurora.Gray(20-1, breadcrumb))
 					fmt.Printf("%s\n", aurora.Cyan(urlString))
-					fmt.Printf("%s\n", aurora.Cyan(urlString))
 				}
 
 				if output == "json" {
-					jsonObj["heading"] = heading
+					jsonObj["title"] = heading
 					jsonObj["description"] = description
-					jsonObj["url"] = urlString
+					jsonObj["link"] = urlString
 					jsonObj["breadcrumb"] = breadcrumb
-					jsonObj["timeAgo"] = timeAgo
 					jsonResults = append(jsonResults, jsonObj)
 
 				}

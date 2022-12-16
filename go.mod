@@ -1,4 +1,4 @@
-module github.com/jerlendds/serp-search
+module github.com/openinfolabs-org/serp
 
 go 1.19
 

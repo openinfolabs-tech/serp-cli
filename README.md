@@ -2,17 +2,17 @@
 
 A work-in-progress Google and Google CSE CLI crawler...
 
-`go build -o toolbox`
+`./serp google search -p 2 -o json -f google-results.json --query "how to cast to int js" `
 
+`./serp google search -p 2 --output tui -q "how to cast to int js"`
 
-`./toolbox google search -p 2 -o json -f google-results.json --query "how to cast to int js" `
-
-`./toolbox google search -p 2 --output tui -q "how to cast to int js"`
+Or pipe into something like jq :
+`./serp google search -p 10 -q 'intext:"index of" ".sql"' | jq`
 
 ```bash
-./toolbox google search -h
+./serp google search -h
 # Usage:
-#   toolbox google search [flags]
+#   serp google search [flags]
 
 # Flags:
 #   -f, --file string     specify the path where results will be saved
@@ -22,8 +22,7 @@ A work-in-progress Google and Google CSE CLI crawler...
 #   -q, --query string    The google search query
 ```
 
-![demo](https://user-images.githubusercontent.com/29207058/206865617-22da83f2-e74b-4b75-9116-a8874811dde3.gif)
-
+[![asciicast](https://user-images.githubusercontent.com/29207058/208087767-feefe329-30ab-45b1-9526-004aa79f63a2.gif)](https://user-images.githubusercontent.com/29207058/208087767-feefe329-30ab-45b1-9526-004aa79f63a2.gif)
 
 # License
 MIT

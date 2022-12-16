@@ -6,7 +6,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/jerlendds/serp-search/cmd/google"
+	"github.com/openinfolabs-org/serp/cmd/google"
 	"github.com/spf13/cobra"
 )
 
